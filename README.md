@@ -125,6 +125,7 @@ Written by hand, validated at aggregation time. Unknown fields are rejected, so 
 | `description` | yes | Full paragraph for the detail view. |
 | `capabilities` | yes | Ordered list of modes; the first is the default when a workflow step names no category. Each entry is a mapping: `name` (one of `subdomains`, `http_probe`, `ports_scanner`, `vulnerabilities`, `screenshot`, `url_discovery`, or — for repository scanners — `secrets`, `sca`, `sast`; no duplicates), `targetTypes` (required: one or more of `domain`, `ip`, `cidr`, `git_org`, no duplicates — the platform never dispatches an asset of another target type to this mode, whichever workflow runs it), `inputsSchema` (optional JSON Schema for this mode's per-run inputs, validated upstream by Core/Worker). Use YAML anchors to share a schema between modes. The first capability also drives directory grouping by category. |
 | `agentTool` | no | Set `true` to expose the connector as a callable tool to the OASM AI agent. |
+| `customArgs` | no | Set `true` when the adapter appends the config profile's admin-set extra arguments (`connector.CustomArgs`) to the tool command. Only for connectors that exec a CLI. |
 | `homepage` | no | Non-empty string when set. |
 | `repositoryUrl` | no | Non-empty string when set. |
 | `supportUrl` | no | Non-empty string when set. |

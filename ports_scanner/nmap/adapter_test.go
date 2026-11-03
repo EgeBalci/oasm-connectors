@@ -199,6 +199,37 @@ func TestExecute_PassesBuiltArgsToBinary(t *testing.T) {
 }
 
 // S2 happy: one Finding per OPEN port only — the filtered port is dropped.
+// TestExecute_AppendsCustomArgs proves the profile's customArgs reach the
+// binary verbatim, after the built args so they override them.
+func TestExecute_AppendsCustomArgs(t *testing.T) {
+	argsFile := filepath.Join(t.TempDir(), "args.json")
+	t.Setenv("NMAP_BIN", ensureFakeNmap(t))
+	t.Setenv("FAKE_MODE", "default")
+	t.Setenv("FAKE_ARGS_FILE", argsFile)
+	t.Setenv("OASM_CONFIG", `{"customArgs":["-sV","--script","http-title and safe"]}`)
+
+	out := make(chan connector.Finding, 64)
+	if err := (NmapAdapter{}).Execute(context.Background(), map[string]any{"target": "localhost"}, out); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	close(out)
+	for range out {
+	}
+
+	raw, err := os.ReadFile(argsFile)
+	if err != nil {
+		t.Fatalf("read captured args: %v", err)
+	}
+	var got []string
+	if err := json.Unmarshal(raw, &got); err != nil {
+		t.Fatalf("unmarshal captured args: %v", err)
+	}
+	want := []string{"-Pn", "-n", "-oX", "-", "127.0.0.1", "-sV", "--script", "http-title and safe"}
+	if !slices.Equal(got, want) {
+		t.Errorf("captured argv:\n got %v\nwant %v", got, want)
+	}
+}
+
 func TestExecute_StreamsOpenPortFindings(t *testing.T) {
 	findings, err := collect(t, "default", "localhost")
 	if err != nil {

@@ -588,14 +588,14 @@ func TestRunOmitsLogoWhenMissing(t *testing.T) {
 // while false is omitted from both.
 func TestAgentToolRoundTripsYamlToJson(t *testing.T) {
 	root := t.TempDir()
-	flagged := strings.Replace(validYAML, "pricingTier: [free]", "pricingTier: [free]\nagentTool: true", 1)
+	flagged := strings.Replace(validYAML, "pricingTier: [free]", "pricingTier: [free]\nagentTool: true\ncustomArgs: true", 1)
 	p := writeManifest(t, filepath.Join(root, "vulnerabilities", "nuclei"), flagged)
 	m, err := loadManifest(p)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !m.AgentTool {
-		t.Fatalf("AgentTool not parsed: %+v", m)
+	if !m.AgentTool || !m.CustomArgs {
+		t.Fatalf("AgentTool/CustomArgs not parsed: %+v", m)
 	}
 
 	out := filepath.Join(root, "manifest.json")
@@ -617,6 +617,9 @@ func TestAgentToolRoundTripsYamlToJson(t *testing.T) {
 	}
 	if v, ok := doc.Connectors[0]["agentTool"].(bool); !ok || !v {
 		t.Fatalf("expected agentTool:true in json, got %v", doc.Connectors[0])
+	}
+	if v, ok := doc.Connectors[0]["customArgs"].(bool); !ok || !v {
+		t.Fatalf("expected customArgs:true in json, got %v", doc.Connectors[0])
 	}
 
 	// False must be omitted (omitempty).

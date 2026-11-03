@@ -93,7 +93,12 @@ func (a DirsearchAdapter) Execute(ctx context.Context, inputs map[string]any, ou
 	errTail.buf = new([]byte)
 	errTail.limit = 2048
 
-	cmd := exec.CommandContext(runCtx, bin, buildDirsearchArgs(base, wordlist, outFile, cfg)...)
+	// Admin-set extra flags from the config profile; appended last so they win.
+	extra, err := connector.CustomArgs(ctx)
+	if err != nil {
+		return fmt.Errorf("dirsearch: %w", err)
+	}
+	cmd := exec.CommandContext(runCtx, bin, append(buildDirsearchArgs(base, wordlist, outFile, cfg), extra...)...)
 	cmd.Stdout = &outTail
 	cmd.Stderr = &errTail
 

@@ -5,6 +5,7 @@ version: 0.75.0
 image: ghcr.io/oasm-platform/connector-trivy:0.75.0
 author: 'oasm'
 pricingTier: [free]
+customArgs: true
 homepage: 'https://trivy.dev'
 repositoryUrl: 'https://github.com/oasm-platform/oasm-connectors'
 supportUrl: 'https://github.com/oasm-platform/oasm-connectors/issues'

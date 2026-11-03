@@ -147,10 +147,15 @@ func runGitleaks(ctx context.Context, args []string) (string, error) {
 	if bin == "" {
 		bin = "gitleaks"
 	}
-	cmd := exec.CommandContext(ctx, bin, args...)
+	// Admin-set extra flags from the config profile; appended last so they win.
+	extra, err := connector.CustomArgs(ctx)
+	if err != nil {
+		return "", fmt.Errorf("gitleaks: %w", err)
+	}
+	cmd := exec.CommandContext(ctx, bin, append(args, extra...)...)
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
-	err := cmd.Run()
+	err = cmd.Run()
 	return stderr.String(), err
 }
 

@@ -4,6 +4,7 @@ version: 2.3.0
 image: ghcr.io/oasm-platform/connector-ffuf:2.3.0
 author: 'oasm'
 pricingTier: [free]
+customArgs: true
 homepage: 'https://github.com/ffuf/ffuf'
 repositoryUrl: 'https://github.com/oasm-platform/oasm-connectors'
 supportUrl: 'https://github.com/oasm-platform/oasm-connectors/issues'

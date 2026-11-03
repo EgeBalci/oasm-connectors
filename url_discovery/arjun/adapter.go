@@ -111,7 +111,12 @@ func (a ArjunAdapter) Execute(ctx context.Context, inputs map[string]any, out ch
 	errTail.buf = new([]byte)
 	errTail.limit = 2048
 
-	cmd := exec.CommandContext(runCtx, bin, buildArjunArgs(base, outFile, cfg)...)
+	// Admin-set extra flags from the config profile; appended last so they win.
+	extra, err := connector.CustomArgs(ctx)
+	if err != nil {
+		return fmt.Errorf("arjun: %w", err)
+	}
+	cmd := exec.CommandContext(runCtx, bin, append(buildArjunArgs(base, outFile, cfg), extra...)...)
 	cmd.Stdout = &outTail
 	cmd.Stderr = &errTail
 

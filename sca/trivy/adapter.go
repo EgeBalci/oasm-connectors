@@ -223,7 +223,12 @@ func runTrivy(ctx context.Context, args, env []string) (string, error) {
 	if bin == "" {
 		bin = "trivy"
 	}
-	cmd := exec.CommandContext(ctx, bin, args...)
+	// Admin-set extra flags from the config profile; appended last so they win.
+	extra, err := connector.CustomArgs(ctx)
+	if err != nil {
+		return "", fmt.Errorf("trivy: %w", err)
+	}
+	cmd := exec.CommandContext(ctx, bin, append(args, extra...)...)
 	if len(env) > 0 {
 		cmd.Env = append(os.Environ(), env...)
 	}
@@ -231,7 +236,7 @@ func runTrivy(ctx context.Context, args, env []string) (string, error) {
 	// where the cause is.
 	stderr := connector.NewTailWriter(2048)
 	cmd.Stderr = stderr
-	err := cmd.Run()
+	err = cmd.Run()
 	return stderr.String(), err
 }
 

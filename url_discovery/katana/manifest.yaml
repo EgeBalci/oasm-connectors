@@ -4,6 +4,7 @@ version: 1.7.0
 image: ghcr.io/oasm-platform/connector-katana:1.7.0
 author: 'oasm'
 pricingTier: [free]
+customArgs: true
 homepage: 'https://github.com/projectdiscovery/katana'
 repositoryUrl: 'https://github.com/oasm-platform/oasm-connectors'
 supportUrl: 'https://github.com/oasm-platform/oasm-connectors/issues'

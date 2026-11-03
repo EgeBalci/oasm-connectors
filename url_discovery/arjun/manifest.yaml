@@ -4,6 +4,7 @@ version: 2.2.7
 image: ghcr.io/oasm-platform/connector-arjun:2.2.7
 author: 'oasm'
 pricingTier: [free]
+customArgs: true
 homepage: 'https://github.com/s0md3v/Arjun'
 repositoryUrl: 'https://github.com/oasm-platform/oasm-connectors'
 supportUrl: 'https://github.com/oasm-platform/oasm-connectors/issues'

@@ -43,7 +43,10 @@ type Manifest struct {
 	// target types it may scan and, optionally, its own inputs schema.
 	Capabilities []Capability `yaml:"capabilities"  json:"capabilities"`
 	// AgentTool exposes this connector as a callable tool to the OASM AI agent.
-	AgentTool        bool           `yaml:"agentTool,omitempty" json:"agentTool,omitempty"`
+	AgentTool bool `yaml:"agentTool,omitempty" json:"agentTool,omitempty"`
+	// CustomArgs marks a CLI connector whose adapter appends the profile's
+	// admin-set extra arguments (sdk connector.CustomArgs) to the tool command.
+	CustomArgs       bool           `yaml:"customArgs,omitempty" json:"customArgs,omitempty"`
 	ConfigSchema     map[string]any `yaml:"configSchema,omitempty"    json:"configSchema,omitempty"`
 	ResourceDefaults map[string]any `yaml:"resourceDefaults,omitempty" json:"resourceDefaults,omitempty"`
 	// Logo is the base64-encoded logo.png sitting next to manifest.yaml.

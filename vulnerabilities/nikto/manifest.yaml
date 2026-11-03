@@ -4,6 +4,7 @@ version: 2.6.1
 image: ghcr.io/oasm-platform/connector-nikto:2.6.1
 author: 'oasm'
 pricingTier: [free]
+customArgs: true
 homepage: 'https://cirt.net/Nikto2'
 repositoryUrl: 'https://github.com/oasm-platform/oasm-connectors'
 supportUrl: 'https://github.com/oasm-platform/oasm-connectors/issues'

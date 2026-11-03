@@ -84,7 +84,12 @@ func (a NiktoAdapter) Execute(ctx context.Context, inputs map[string]any, out ch
 
 	stderr := connector.NewTailWriter(2048)
 
-	cmd := exec.CommandContext(ctx, bin, buildNiktoArgs(target, cfg, configPath)...)
+	// Admin-set extra flags from the config profile; appended last so they win.
+	extra, err := connector.CustomArgs(ctx)
+	if err != nil {
+		return fmt.Errorf("nikto: %w", err)
+	}
+	cmd := exec.CommandContext(ctx, bin, append(buildNiktoArgs(target, cfg, configPath), extra...)...)
 	cmd.Stderr = stderr
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {

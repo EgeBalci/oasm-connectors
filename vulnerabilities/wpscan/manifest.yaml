@@ -4,6 +4,7 @@ version: 4.1.0
 image: ghcr.io/oasm-platform/connector-wpscan:4.1.0
 author: 'oasm'
 pricingTier: [free]
+customArgs: true
 homepage: 'https://wpscan.com'
 repositoryUrl: 'https://github.com/oasm-platform/oasm-connectors'
 supportUrl: 'https://github.com/oasm-platform/oasm-connectors/issues'

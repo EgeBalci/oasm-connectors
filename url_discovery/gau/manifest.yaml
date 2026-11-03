@@ -4,6 +4,7 @@ version: 2.2.4
 image: ghcr.io/oasm-platform/connector-gau:2.2.4
 author: 'oasm'
 pricingTier: [free]
+customArgs: true
 homepage: 'https://github.com/lc/gau'
 repositoryUrl: 'https://github.com/oasm-platform/oasm-connectors'
 supportUrl: 'https://github.com/oasm-platform/oasm-connectors/issues'

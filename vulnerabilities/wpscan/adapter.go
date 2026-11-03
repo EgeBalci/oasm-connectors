@@ -57,7 +57,12 @@ func (a WpscanAdapter) Execute(ctx context.Context, inputs map[string]any, out c
 	stderr := connector.NewTailWriter(2048)
 
 	var stdout bytes.Buffer
-	cmd := exec.CommandContext(ctx, bin, buildWpscanArgs(target, cfg)...)
+	// Admin-set extra flags from the config profile; appended last so they win.
+	extra, err := connector.CustomArgs(ctx)
+	if err != nil {
+		return fmt.Errorf("wpscan: %w", err)
+	}
+	cmd := exec.CommandContext(ctx, bin, append(buildWpscanArgs(target, cfg), extra...)...)
 	cmd.Stdout = &stdout
 	cmd.Stderr = stderr
 

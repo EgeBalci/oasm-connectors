@@ -87,8 +87,13 @@ func (a *ZapAdapter) Execute(ctx context.Context, inputs map[string]any, out cha
 		return fmt.Errorf("zap: create home dir: %w", err)
 	}
 
-	cmd := exec.CommandContext(runCtx, bin, "-cmd", "-silent", "-nostdout",
-		"-autorun", planPath, "-dir", homeDir)
+	// Admin-set extra flags from the config profile; appended last so they win.
+	extra, err := connector.CustomArgs(ctx)
+	if err != nil {
+		return fmt.Errorf("zap: %w", err)
+	}
+	cmd := exec.CommandContext(runCtx, bin, append([]string{"-cmd", "-silent", "-nostdout",
+		"-autorun", planPath, "-dir", homeDir}, extra...)...)
 	cmd.Stderr = stderr
 	// ZAP is a shell script that spawns a JVM; kill the whole process group on
 	// cancel/timeout or the JVM survives the container's warm-pool reuse.

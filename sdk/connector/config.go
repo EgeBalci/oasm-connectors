@@ -42,3 +42,17 @@ func HasConfig(ctx context.Context) bool {
 	raw, _ := ctx.Value(configKey{}).(string)
 	return strings.TrimSpace(raw) != "" || strings.TrimSpace(os.Getenv("OASM_CONFIG")) != ""
 }
+
+// CustomArgs returns the extra command-line arguments a workspace admin set on
+// the job's config profile. Core tokenizes them before dispatch, so each entry
+// is one argv element; adapters append them after their own arguments (later
+// flags win) and run the tool without a shell.
+func CustomArgs(ctx context.Context) ([]string, error) {
+	cfg, err := LoadConfig[struct {
+		CustomArgs []string `json:"customArgs"`
+	}](ctx)
+	if err != nil {
+		return nil, err
+	}
+	return cfg.CustomArgs, nil
+}

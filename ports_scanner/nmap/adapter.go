@@ -137,7 +137,12 @@ func (a NmapAdapter) Execute(ctx context.Context, inputs map[string]any, out cha
 	// -n is paired with the resolution above: nmap is handed an address, so it
 	// never re-resolves and never emits PTR noise to stderr.
 	vulns := connector.Category(ctx) == categoryVulnerabilities
-	cmd := exec.CommandContext(runCtx, bin, buildNmapArgs(ip, cfg, vulns)...)
+	// Admin-set extra flags from the config profile; appended last so they win.
+	extra, err := connector.CustomArgs(ctx)
+	if err != nil {
+		return fmt.Errorf("nmap: %w", err)
+	}
+	cmd := exec.CommandContext(runCtx, bin, append(buildNmapArgs(ip, cfg, vulns), extra...)...)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return fmt.Errorf("nmap: stdout pipe: %w", err)

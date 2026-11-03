@@ -90,7 +90,12 @@ func (a KatanaAdapter) Execute(ctx context.Context, inputs map[string]any, out c
 
 	stderr := connector.NewTailWriter(2048)
 
-	cmd := exec.CommandContext(runCtx, bin, buildKatanaArgs(target, cfg)...)
+	// Admin-set extra flags from the config profile; appended last so they win.
+	extra, err := connector.CustomArgs(ctx)
+	if err != nil {
+		return fmt.Errorf("katana: %w", err)
+	}
+	cmd := exec.CommandContext(runCtx, bin, append(buildKatanaArgs(target, cfg), extra...)...)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return fmt.Errorf("katana: stdout pipe: %w", err)

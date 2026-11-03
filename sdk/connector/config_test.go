@@ -50,3 +50,15 @@ func TestLoadConfigMalformedJSONFails(t *testing.T) {
 		t.Fatalf("err = %v, want invalid OASM_CONFIG", err)
 	}
 }
+
+func TestCustomArgs(t *testing.T) {
+	t.Setenv("OASM_CONFIG", "")
+	ctx := WithConfig(context.Background(), `{"rate":1,"customArgs":["-sV","--script","a b"]}`)
+	args, err := CustomArgs(ctx)
+	if err != nil || strings.Join(args, "|") != "-sV|--script|a b" {
+		t.Fatalf("got %q, %v", args, err)
+	}
+	if args, err := CustomArgs(context.Background()); err != nil || args != nil {
+		t.Fatalf("unset: got %q, %v; want nil", args, err)
+	}
+}

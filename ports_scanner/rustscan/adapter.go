@@ -116,7 +116,12 @@ func (a RustscanAdapter) Execute(ctx context.Context, inputs map[string]any, out
 		proto = "udp"
 	}
 
-	cmd := exec.CommandContext(runCtx, bin, buildRustscanArgs(ip, cfg)...)
+	// Admin-set extra flags from the config profile; appended last so they win.
+	extra, err := connector.CustomArgs(ctx)
+	if err != nil {
+		return fmt.Errorf("rustscan: %w", err)
+	}
+	cmd := exec.CommandContext(runCtx, bin, append(buildRustscanArgs(ip, cfg), extra...)...)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return fmt.Errorf("rustscan: stdout pipe: %w", err)
