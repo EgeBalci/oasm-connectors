@@ -26,6 +26,7 @@ capabilities:
           ui:placeholder: 'https://example.com'
       additionalProperties: false
 agentTool: true
+customArgs: true
 configSchema:
   type: object
   additionalProperties: false

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -66,6 +67,7 @@ type params struct {
 	followRedirects bool
 	idMode          bool
 	noInteractsh    bool
+	proxy           string // from the profile's custom args, see proxyFromArgs
 }
 
 // scanParams maps a Config + templates directory into a params struct.
@@ -112,7 +114,7 @@ func scanParams(cfg Config, dir string) params {
 		interactsh = *cfg.Interactsh
 	}
 
-	return params{templates, filters, rl, c, fr, idMode, !interactsh}
+	return params{templates, filters, rl, c, fr, idMode, !interactsh, ""}
 }
 
 // sdkOptions converts resolved params into nuclei SDK option functions.
@@ -137,6 +139,19 @@ func sdkOptions(ctx context.Context, p params) []nuclei.NucleiSDKOptions {
 		TemplatePayloadConcurrency:    25,
 		ProbeConcurrency:              50,
 	}))
+	if p.proxy != "" {
+		// nuclei.WithProxy only fills Options.Proxy; the protocol clients read
+		// the Alive*Proxy fields, which only the CLI runner resolves. Set them
+		// before init so the HTTP, DNS and network dialers pick them up.
+		opts = append(opts, func(e *nuclei.NucleiEngine) error {
+			if strings.HasPrefix(p.proxy, "socks5://") {
+				e.Options().AliveSocksProxy = p.proxy
+			} else {
+				e.Options().AliveHttpProxy = p.proxy
+			}
+			return nil
+		})
+	}
 	if p.noInteractsh {
 		// NoInteractsh:true alone panics (CacheSize=0 → gcache Build).
 		// Backfill the SDK's DefaultOptions cache fields so init() succeeds
@@ -149,6 +164,42 @@ func sdkOptions(ctx context.Context, p params) []nuclei.NucleiSDKOptions {
 		}))
 	}
 	return opts
+}
+
+// proxyFromArgs maps the profile's custom args onto nuclei's -proxy flag.
+// nuclei runs in-process, so only flags mapped here can take effect; any
+// other flag is rejected instead of being silently ignored. Unlike the CLI,
+// a single proxy URL is accepted (no comma lists or proxy files). Errors
+// never echo the value, since a proxy URL can carry credentials.
+func proxyFromArgs(args []string) (string, error) {
+	var proxy string
+	for i := 0; i < len(args); i++ {
+		name, val, hasVal := strings.Cut(args[i], "=")
+		if name != "-proxy" && name != "--proxy" && name != "-p" {
+			return "", fmt.Errorf("unsupported custom arg %q: the nuclei connector only supports -proxy", name)
+		}
+		if !hasVal {
+			if i++; i == len(args) {
+				return "", fmt.Errorf("%s needs a value", name)
+			}
+			val = args[i]
+		}
+		proxy = val // last one wins, like repeated CLI flags
+	}
+	if proxy == "" && len(args) == 0 {
+		return "", nil
+	}
+	u, err := url.Parse(proxy)
+	if err != nil || u.Host == "" || strings.Contains(proxy, ",") {
+		return "", errors.New("invalid -proxy: want one scheme://host:port URL")
+	}
+	switch u.Scheme {
+	case "http", "https", "socks5":
+	default:
+		return "", fmt.Errorf("invalid -proxy scheme %q: want http, https or socks5", u.Scheme)
+	}
+	log.Printf("nuclei: using proxy %s", u.Redacted())
+	return u.String(), nil // normalised: lowercase scheme for the socks5 check
 }
 
 // Validate is intentionally a no-op: inputs are validated upstream by the
@@ -189,6 +240,13 @@ func (a *NucleiAdapter) Execute(ctx context.Context, inputs map[string]any, out 
 	}
 
 	p := scanParams(*cfg, dir)
+	extra, err := connector.CustomArgs(ctx)
+	if err != nil {
+		return err
+	}
+	if p.proxy, err = proxyFromArgs(extra); err != nil {
+		return err
+	}
 	nuclei.DefaultConfig.SetTemplatesDir(p.templates[0])
 
 	engine, err := nuclei.NewNucleiEngineCtx(ctx, sdkOptions(ctx, p)...)
@@ -200,7 +258,7 @@ func (a *NucleiAdapter) Execute(ctx context.Context, inputs map[string]any, out 
 	engine.Options().FollowRedirects = p.followRedirects
 	engine.LoadTargets([]string{target}, false)
 	if !strings.Contains(target, "://") {
-		if hm := probeHTTPInput(target); hm != nil {
+		if hm := probeHTTPInput(target, p.proxy); hm != nil {
 			defer hm.Close()
 			engine.GetExecuterOptions().InputHelper.InputsHTTP = hm
 		}
@@ -245,9 +303,10 @@ func (a *NucleiAdapter) Execute(ctx context.Context, inputs map[string]any, out 
 // scheme that answers so http templates use it, while the bare host stays the
 // input for dns/ssl/network templates. Nil on a miss — nuclei then falls back
 // to https:// for http templates, as before.
-func probeHTTPInput(target string) *hybrid.HybridMap {
+func probeHTTPInput(target, proxy string) *hybrid.HybridMap {
 	opts := httpx.DefaultOptions
 	opts.Timeout = 5 * time.Second // same as the SDK's own probe client
+	opts.Proxy = proxy             // the probe must not bypass the scan's proxy
 	client, err := httpx.New(&opts)
 	if err != nil {
 		log.Printf("nuclei: http probe client: %v", err)
